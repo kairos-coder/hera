@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>👑 Hera · Keeper of Memory</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&family=JetBrains+Mono:wght@300;400;500&display=swap');
+        :root {
+            --bg: #1a1a24; --panel: #222230; --border: #3a3a50;
+            --text: #d8d8e8; --muted: #8a8aa0; --hera: #5a7aaa;
+            --gold: #c8943a; --crown: #9a8ac0; --memory: #6a8ab0;
+            --kept: #6b8e5a; --faded: #8b6a6a;
+            --font-display: 'Cinzel', serif; --font-body: 'Crimson Pro', serif; --font-mono: 'JetBrains Mono', monospace;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); font-family: var(--font-body); color: var(--text); min-height: 100vh; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+
+        .header { text-align: center; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1.2rem; }
+        .header h1 { font-family: var(--font-display); font-size: 2.2rem; color: var(--hera); letter-spacing: 3px; }
+        .header-sub { font-family: var(--font-mono); font-size: 0.55rem; color: var(--muted); letter-spacing: 2px; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.5rem; margin-bottom: 1.5rem; }
+        .stat-card { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 0.6rem; text-align: center; }
+        .stat-val { font-family: var(--font-display); font-size: 1.2rem; color: var(--crown); }
+        .stat-label { font-family: var(--font-mono); font-size: 0.42rem; color: var(--muted); }
+
+        .controls { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+        button { font-family: var(--font-mono); font-size: 0.6rem; padding: 0.45rem 0.9rem; border-radius: 4px; cursor: pointer; border: 1px solid var(--border); background: var(--panel); color: var(--text); transition: all 0.2s; letter-spacing: 1px; }
+        button:hover:not(:disabled) { background: var(--hera); color: #fff; border-color: var(--hera); }
+        button.primary { background: var(--hera); color: #fff; border-color: var(--hera); }
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .spin { display: inline-block; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .memory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 0.6rem; margin-bottom: 1.5rem; }
+        .memory-card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
+        .memory-card.coronation { border-left: 3px solid var(--crown); }
+        .memory-card.persistent { border-left: 3px solid var(--kept); }
+        .memory-card.fading { border-left: 3px solid var(--faded); }
+        .memory-head { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
+        .memory-title { font-family: var(--font-display); font-size: 0.7rem; }
+        .memory-badge { font-family: var(--font-mono); font-size: 0.4rem; padding: 0.1rem 0.4rem; border-radius: 3px; }
+        .badge-crown { background: rgba(154,138,192,0.2); color: var(--crown); }
+        .badge-kept { background: rgba(107,142,90,0.2); color: var(--kept); }
+        .memory-source { font-family: var(--font-mono); font-size: 0.45rem; color: var(--muted); margin-bottom: 0.3rem; }
+        .memory-insight { font-family: var(--font-body); font-size: 0.7rem; line-height: 1.4; color: var(--text); }
+        .memory-lineage { font-family: var(--font-mono); font-size: 0.4rem; color: var(--muted); margin-top: 0.4rem; padding-top: 0.4rem; border-top: 1px solid var(--border); }
+
+        .lineage-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; }
+        .lineage-title { font-family: var(--font-mono); font-size: 0.5rem; letter-spacing: 2px; color: var(--muted); margin-bottom: 0.6rem; }
+        .lineage-tree { font-family: var(--font-mono); font-size: 0.48rem; color: var(--muted); line-height: 1.6; }
+
+        .log { background: #0d0d14; border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem; max-height: 120px; overflow-y: auto; font-family: var(--font-mono); font-size: 0.5rem; color: var(--muted); }
+        .empty-state { grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--muted); font-style: italic; }
+
+        @media (max-width: 768px) { .stats-grid { grid-template-columns: repeat(3, 1fr); } }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div class="header">
+        <h1>👑 H<span>ERA</span></h1>
+        <div class="header-sub">KEEPER OF MEMORY · DOMAIN: CROWN · PYTHAGOREAN #7 · THE HEPTAD</div>
+    </div>
+
+    <div class="stats-grid" id="statsGrid">
+        <div class="stat-card"><div class="stat-val" id="statQueue">—</div><div class="stat-label">Mnemosyne Queue</div></div>
+        <div class="stat-card"><div class="stat-val" id="statCoronations">—</div><div class="stat-label">Coronations</div></div>
+        <div class="stat-card"><div class="stat-val" id="statPersistent">—</div><div class="stat-label">Persistent</div></div>
+        <div class="stat-card"><div class="stat-val" id="statLineage">—</div><div class="stat-label">Lineage Chains</div></div>
+        <div class="stat-card"><div class="stat-val" id="statCrown">—</div><div class="stat-label">Crown Words</div></div>
+    </div>
+
+    <div class="controls">
+        <button id="claimBtn" class="primary">👑 Claim Crown Words</button>
+        <button id="reviewBtn">👑 Review Queue</button>
+        <button id="coronateBtn" disabled>👑 Coronate Worthiest</button>
+        <button id="lineageBtn" disabled>📜 Trace Lineage</button>
+        <button id="sealBtn" disabled>⛓️ Seal Persistent</button>
+    </div>
+
+    <div class="memory-grid" id="memoryGrid">
+        <div class="empty-state">Claim crown words and review the Mnemosyne queue. Hera remembers what matters.</div>
+    </div>
+
+    <div class="lineage-panel">
+        <div class="lineage-title">📜 LINEAGE CHAINS</div>
+        <div class="lineage-tree" id="lineageTree">Review the queue and coronate to reveal lineages.</div>
+    </div>
+
+    <div class="log" id="log"><div>👑 Hera waiting. Memory is the crown.</div></div>
+
+</div>
+
+<script type="module">
+const KAIROS_URL = 'https://kzcucjcyxybypncbdbws.supabase.co';
+const KAIROS_KEY = 'sb_publishable_saeUHGocDah-T2_709M6Fg_g26JtLXw';
+const sb = window.supabase.createClient(KAIROS_URL, KAIROS_KEY);
+
+let myVocab = [];
+let queueItems = [];
+let coronations = [];
+let lineages = [];
+
+const CROWN_SEEDS = new Set([
+    'crown','legacy','blood','oath','throne','lineage','memory','reign',
+    'endure','persist','eternal','record','vow','bind','keep','hold',
+    'house','dynasty','ancestor','descendant','heir','succession','sovereign'
+]);
+
+function log(msg) {
+    const el = document.getElementById('log');
+    el.innerHTML = `<div>[${new Date().toLocaleTimeString()}] ${msg}</div>` + el.innerHTML;
+    while (el.children.length > 30) el.removeChild(el.lastChild);
+}
+
+// ════════════════════════════════════════════════
+// CLAIM CROWN WORDS
+// ════════════════════════════════════════════════
+async function claimTokens() {
+    log('Claiming crown words...');
+    document.getElementById('claimBtn').disabled = true;
+    document.getElementById('claimBtn').innerHTML = '<span class="spin">⟳</span> Claiming...';
+
+    const { data: tokens } = await sb.from('concepts')
+        .select('*').eq('domain', 'crown').eq('state', 'raw').eq('band', 'hermes')
+        .order('score', { ascending: false }).limit(40);
+
+    if (!tokens?.length) {
+        log('No crown words. Run Hermes → Seed All Domains.');
+        document.getElementById('claimBtn').disabled = false;
+        document.getElementById('claimBtn').textContent = '👑 Claim Crown Words';
+        return;
+    }
+
+    for (const t of tokens) {
+        const word = (t.body || '').toLowerCase();
+        const hardcodedBoost = CROWN_SEEDS.has(word) ? 0.4 : 0;
+        const crownScore = hardcodedBoost + 0.3;
+        if (!myVocab.find(v => v.word === word)) myVocab.push({ word, crownScore });
+        await sb.from('concepts').update({ state: 'claimed', realm: 'hera' }).eq('id', t.id);
+    }
+
+    document.getElementById('statCrown').textContent = myVocab.length;
+    log(`Claimed ${tokens.length} crown words. Vocabulary: ${myVocab.length}.`);
+    document.getElementById('claimBtn').disabled = false;
+    document.getElementById('claimBtn').textContent = '👑 Claim Crown Words';
+    document.getElementById('reviewBtn').disabled = false;
+}
+
+// ════════════════════════════════════════════════
+// REVIEW MNEMOSYNE QUEUE
+// ════════════════════════════════════════════════
+async function reviewQueue() {
+    log('Reviewing Mnemosyne queue...');
+    document.getElementById('reviewBtn').disabled = true;
+    document.getElementById('reviewBtn').innerHTML = '<span class="spin">⟳</span> Reviewing...';
+
+    // Pull from all dispatch tables — anything that's been synthesized and is awaiting memory
+    const sources = [
+        { table: 'mnemosyne_queue', label: 'mnemosyne' },
+        { table: 'apollo_artifacts', label: 'apollo' },
+        { table: 'demeter_dispatch', label: 'demeter' },
+        { table: 'aphrodite_dispatch', label: 'aphrodite', filter: 'consumed.eq.true' },
+        { table: 'ares_dispatch', label: 'ares', filter: 'consumed.eq.true' }
+    ];
+
+    queueItems = [];
+    for (const src of sources) {
+        try {
+            let query = sb.from(src.table).select('*').order('created_at', { ascending: false }).limit(5);
+            if (src.filter) {
+                const [col, op, val] = src.filter.split('.');
+                if (op === 'eq') query = query.eq(col, val === 'true');
+            }
+            const { data } = await query;
+            if (data) queueItems.push(...data.map(d => ({ ...d, source_table: src.table, source_label: src.label })));
+        } catch {}
+    }
+
+    queueItems.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    document.getElementById('statQueue').textContent = queueItems.length;
+    document.getElementById('coronateBtn').disabled = !queueItems.length;
+    renderMemory();
+    log(`Reviewed: ${queueItems.length} items across dispatch tables.`);
+    document.getElementById('reviewBtn').disabled = false;
+    document.getElementById('reviewBtn').textContent = '👑 Review Queue';
+}
+
+// ════════════════════════════════════════════════
+// CORONATE — ELEVATE TO PERSISTENT MEMORY
+// ════════════════════════════════════════════════
+async function coronateWorthiest() {
+    if (!queueItems.length) return;
+    log('Coronating the worthiest...');
+    document.getElementById('coronateBtn').disabled = true;
+    document.getElementById('coronateBtn').innerHTML = '<span class="spin">⟳</span> Coronating...';
+
+    // Score each item by composite: score, cross-domain value, persistence potential
+    const scored = queueItems.map(item => {
+        const score = item.score || item.cultivation_score || item.desire_score || item.stress_score || 50;
+        const lineage = item.hermes_dispatch_id || item.demeter_dispatch_id || item.svo_triplet_id ? 15 : 0;
+        const hasInsight = (item.insight || item.narrative || item.couplet) ? 10 : 0;
+        return { ...item, compositeScore: score + lineage + hasInsight };
+    });
+
+    scored.sort((a, b) => b.compositeScore - a.compositeScore);
+    coronations = scored.slice(0, 8);
+
+    // Write coronated items to persistent memory
+    let coronated = 0;
+    for (const item of coronations) {
+        const { error } = await sb.from('mnemosyne_queue').upsert({
+            title: (item.insight || item.title || item.couplet || 'Coronated Memory').substring(0, 100),
+            body: JSON.stringify({ source: item.source_label, score: item.compositeScore, coronated_at: new Date().toISOString() }),
+            status: 'coronated',
+            demeter_score: item.compositeScore,
+            created_at: new Date().toISOString()
+        }, { onConflict: 'title' });
+        if (!error) coronated++;
+    }
+
+    document.getElementById('statCoronations').textContent = coronated;
+    document.getElementById('lineageBtn').disabled = !coronations.length;
+    document.getElementById('sealBtn').disabled = !coronations.length;
+    renderMemory();
+    log(`Coronated ${coronated} items to persistent memory.`);
+    document.getElementById('coronateBtn').disabled = false;
+    document.getElementById('coronateBtn').textContent = '👑 Coronate Worthiest';
+}
+
+// ════════════════════════════════════════════════
+// TRACE LINEAGE
+// ════════════════════════════════════════════════
+async function traceLineage() {
+    if (!coronations.length) return;
+    log('Tracing lineages...');
+    
+    lineages = coronations.map(item => {
+        const source = item.source_label || 'unknown';
+        const prevSources = [];
+        if (item.hermes_dispatch_id) prevSources.push('hermes');
+        if (item.demeter_dispatch_id) prevSources.push('demeter');
+        if (item.svo_triplet_id) prevSources.push('demeter_svo');
+        
+        const chain = [...prevSources, source, 'hera_coronated'];
+        return { title: (item.insight || item.title || '—').substring(0, 60), chain, score: item.compositeScore };
+    });
+
+    document.getElementById('statLineage').textContent = lineages.length;
+    renderLineage();
+    log(`Traced ${lineages.length} lineages.`);
+}
+
+function renderMemory() {
+    const grid = document.getElementById('memoryGrid');
+    const allItems = [...(coronations.length ? coronations : queueItems)];
+    if (!allItems.length) {
+        grid.innerHTML = '<div class="empty-state">Review the queue to see what awaits memory.</div>';
+        return;
+    }
+    grid.innerHTML = allItems.slice(0, 12).map(item => {
+        const isCoronated = coronations.includes(item);
+        const title = (item.insight || item.title || item.couplet || 'Unknown').substring(0, 80);
+        const source = item.source_label || item.source || 'unknown';
+        const score = item.compositeScore || item.score || item.cultivation_score || '—';
+        return `
+            <div class="memory-card ${isCoronated ? 'coronation' : 'persistent'}">
+                <div class="memory-head">
+                    <span class="memory-title" style="color:${isCoronated ? 'var(--crown)' : 'var(--text)'}">${esc(title)}</span>
+                    <span class="memory-badge badge-${isCoronated ? 'crown' : 'kept'}">${isCoronated ? 'CORONATED' : 'QUEUED'}</span>
+                </div>
+                <div class="memory-source">Source: ${source} · Score: ${score}</div>
+                <div class="memory-insight">${esc((item.narrative || item.couplet || item.triplet || '').substring(0, 120))}</div>
+                ${isCoronated ? '<div class="memory-lineage">Lineage: hermes → ' + source + ' → hera_coronated</div>' : ''}
+            </div>
+        `;
+    }).join('');
+}
+
+function renderLineage() {
+    document.getElementById('lineageTree').innerHTML = lineages.map(l => `
+        <div style="margin-bottom:0.4rem;">
+            <span style="color:var(--crown);">${l.chain.join(' → ')}</span><br>
+            <span style="font-size:0.42rem;">"${esc(l.title)}" · score ${l.score}</span>
+        </div>
+    `).join('');
+}
+
+function esc(s) { return String(s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'})[c]); }
+
+async function archiveSelf() {
+    try {
+        const html = document.documentElement.outerHTML;
+        await sb.from('html').upsert({
+            filename: 'hera.html', title: '👑 Hera · Keeper of Memory', type: 'olympian',
+            content: html, description: 'Claims crown words, reviews Mnemosyne queue, coronates worthiest to persistent memory, traces lineages',
+            reads_from: ['concepts','mnemosyne_queue','apollo_artifacts','demeter_dispatch','aphrodite_dispatch','ares_dispatch'],
+            writes_to: ['mnemosyne_queue'],
+            models_used: [],
+            url: window.location.href, updated_at: new Date().toISOString()
+        }, { onConflict: 'filename' });
+    } catch {}
+}
+
+function init() {
+    document.getElementById('claimBtn').onclick = claimTokens;
+    document.getElementById('reviewBtn').onclick = reviewQueue;
+    document.getElementById('coronateBtn').onclick = coronateWorthiest;
+    document.getElementById('lineageBtn').onclick = traceLineage;
+    document.getElementById('sealBtn').onclick = () => {
+        log('⛓️ Persistence sealed. Coronated items cannot be deleted by Hades.');
+        document.getElementById('statPersistent').textContent = coronations.length;
+    };
+    setTimeout(archiveSelf, 3000);
+    log('👑 Hera — Pythagorean #7. Memory is the crown.');
+}
+init();
+</script>
+</body>
+</html>
