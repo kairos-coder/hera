@@ -3,323 +3,381 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>👑 Hera · Keeper of Memory</title>
+    <title>👑 Hera · Command Center</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&family=JetBrains+Mono:wght@300;400;500&display=swap');
         :root {
-            --bg: #1a1a24; --panel: #222230; --border: #3a3a50;
-            --text: #d8d8e8; --muted: #8a8aa0; --hera: #5a7aaa;
-            --gold: #c8943a; --crown: #9a8ac0; --memory: #6a8ab0;
-            --kept: #6b8e5a; --faded: #8b6a6a;
+            --void: #080a0f; --deep: #0b0e16; --surface: #1e2535;
+            --gold: #c8943a; --hera: #5a7aaa; --mist: #6a7a8a; --pale: #d4e0ed;
             --font-display: 'Cinzel', serif; --font-body: 'Crimson Pro', serif; --font-mono: 'JetBrains Mono', monospace;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: var(--bg); font-family: var(--font-body); color: var(--text); min-height: 100vh; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+        body { background: var(--void); font-family: var(--font-body); color: var(--pale); min-height: 100vh; }
 
-        .header { text-align: center; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1.2rem; }
-        .header h1 { font-family: var(--font-display); font-size: 2.2rem; color: var(--hera); letter-spacing: 3px; }
-        .header-sub { font-family: var(--font-mono); font-size: 0.55rem; color: var(--muted); letter-spacing: 2px; }
+        body::after { content: ''; position: fixed; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, transparent, var(--hera), var(--gold), var(--hera), transparent); z-index: 100; }
 
-        .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.5rem; margin-bottom: 1.5rem; }
-        .stat-card { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 0.6rem; text-align: center; }
-        .stat-val { font-family: var(--font-display); font-size: 1.2rem; color: var(--crown); }
-        .stat-label { font-family: var(--font-mono); font-size: 0.42rem; color: var(--muted); }
+        .topbar {
+            display: flex; align-items: center; gap: 1rem;
+            padding: 0.5rem 1.5rem; background: var(--deep); border-bottom: 1px solid var(--surface);
+        }
+        .topbar .logo { font-family: var(--font-display); font-size: 1rem; color: var(--hera); }
+        .topbar .telos { flex: 1; font-style: italic; font-size: 0.8rem; border-left: 1px solid var(--surface); padding-left: 1rem; }
+        .topbar .telos.empty { color: var(--mist); }
+        .topbar .dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; }
+        .topbar .dot.inactive { background: var(--mist); }
 
-        .controls { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
-        button { font-family: var(--font-mono); font-size: 0.6rem; padding: 0.45rem 0.9rem; border-radius: 4px; cursor: pointer; border: 1px solid var(--border); background: var(--panel); color: var(--text); transition: all 0.2s; letter-spacing: 1px; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
+        .main { display: flex; gap: 1rem; }
+
+        /* ── LEFT ── */
+        .left { width: 380px; flex-shrink: 0; display: flex; flex-direction: column; gap: 0.8rem; }
+        .panel { background: var(--deep); border: 1px solid var(--surface); border-radius: 6px; padding: 1rem; }
+        .panel h2 { font-family: var(--font-display); font-size: 0.7rem; color: var(--hera); margin-bottom: 0.5rem; letter-spacing: 2px; }
+        .panel textarea {
+            width: 100%; background: #060810; color: var(--pale); border: 1px solid var(--surface);
+            border-left: 3px solid var(--hera); padding: 0.6rem; font-family: var(--font-mono);
+            font-size: 0.55rem; resize: vertical; min-height: 60px; border-radius: 4px; outline: none;
+        }
+        .panel textarea:focus { border-color: var(--gold); }
+        .panel input {
+            width: 100%; background: #060810; color: var(--pale); border: 1px solid var(--surface);
+            padding: 0.4rem 0.6rem; font-family: var(--font-mono); font-size: 0.5rem; border-radius: 4px;
+        }
+        .panel input:focus { border-color: var(--hera); outline: none; }
+        button {
+            padding: 0.4rem 0.8rem; border: 1px solid var(--surface); background: var(--deep);
+            color: var(--pale); border-radius: 4px; cursor: pointer; font-family: var(--font-mono);
+            font-size: 0.5rem; letter-spacing: 1px; transition: all 0.2s;
+        }
         button:hover:not(:disabled) { background: var(--hera); color: #fff; border-color: var(--hera); }
-        button.primary { background: var(--hera); color: #fff; border-color: var(--hera); }
-        button:disabled { opacity: 0.4; cursor: not-allowed; }
-        .spin { display: inline-block; animation: spin 0.8s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        button.primary { background: var(--hera); color: #fff; border-color: var(--hera); font-weight: bold; }
+        button:disabled { opacity: 0.3; cursor: not-allowed; }
 
-        .memory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 0.6rem; margin-bottom: 1.5rem; }
-        .memory-card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
-        .memory-card.coronation { border-left: 3px solid var(--crown); }
-        .memory-card.persistent { border-left: 3px solid var(--kept); }
-        .memory-card.fading { border-left: 3px solid var(--faded); }
-        .memory-head { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
-        .memory-title { font-family: var(--font-display); font-size: 0.7rem; }
-        .memory-badge { font-family: var(--font-mono); font-size: 0.4rem; padding: 0.1rem 0.4rem; border-radius: 3px; }
-        .badge-crown { background: rgba(154,138,192,0.2); color: var(--crown); }
-        .badge-kept { background: rgba(107,142,90,0.2); color: var(--kept); }
-        .memory-source { font-family: var(--font-mono); font-size: 0.45rem; color: var(--muted); margin-bottom: 0.3rem; }
-        .memory-insight { font-family: var(--font-body); font-size: 0.7rem; line-height: 1.4; color: var(--text); }
-        .memory-lineage { font-family: var(--font-mono); font-size: 0.4rem; color: var(--muted); margin-top: 0.4rem; padding-top: 0.4rem; border-top: 1px solid var(--border); }
+        .slot-row { display: flex; gap: 0.4rem; margin-bottom: 0.4rem; align-items: center; }
+        .slot-row input { flex: 1; }
+        .slot-row .slot-num { font-family: var(--font-mono); font-size: 0.5rem; color: var(--hera); width: 16px; }
+        .slot-actions { display: flex; gap: 0.2rem; }
+        .slot-actions button { padding: 0.2rem 0.4rem; font-size: 0.4rem; }
 
-        .lineage-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; }
-        .lineage-title { font-family: var(--font-mono); font-size: 0.5rem; letter-spacing: 2px; color: var(--muted); margin-bottom: 0.6rem; }
-        .lineage-tree { font-family: var(--font-mono); font-size: 0.48rem; color: var(--muted); line-height: 1.6; }
+        /* ── TOGGLES ── */
+        .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 0.3rem 0; }
+        .toggle-row span { font-family: var(--font-mono); font-size: 0.5rem; }
+        .toggle-switch {
+            width: 36px; height: 20px; background: var(--surface); border-radius: 10px;
+            position: relative; cursor: pointer; transition: background 0.2s;
+        }
+        .toggle-switch.on { background: var(--hera); }
+        .toggle-switch::after {
+            content: ''; position: absolute; top: 2px; left: 2px;
+            width: 16px; height: 16px; background: #fff; border-radius: 50%;
+            transition: transform 0.2s;
+        }
+        .toggle-switch.on::after { transform: translateX(16px); }
 
-        .log { background: #0d0d14; border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem; max-height: 120px; overflow-y: auto; font-family: var(--font-mono); font-size: 0.5rem; color: var(--muted); }
-        .empty-state { grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--muted); font-style: italic; }
+        /* ── TASK LIST ── */
+        .task-input-row { display: flex; gap: 0.4rem; margin-bottom: 0.6rem; }
+        .task-input-row input { flex: 1; }
+        .task-item {
+            display: flex; align-items: center; gap: 0.5rem; padding: 0.3rem 0;
+            border-bottom: 1px solid rgba(30,37,53,0.5); font-family: var(--font-mono); font-size: 0.5rem;
+        }
+        .task-item .check {
+            width: 16px; height: 16px; border: 1px solid var(--surface); border-radius: 3px;
+            cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+            font-size: 0.6rem;
+        }
+        .task-item .check.done { background: var(--hera); border-color: var(--hera); }
+        .task-item .body { flex: 1; }
+        .task-item .body.done { text-decoration: line-through; color: var(--mist); }
 
-        @media (max-width: 768px) { .stats-grid { grid-template-columns: repeat(3, 1fr); } }
+        .prev-list { font-family: var(--font-mono); font-size: 0.45rem; color: var(--mist); max-height: 120px; overflow-y: auto; }
+        .prev-list .item { padding: 0.2rem 0; border-bottom: 1px solid rgba(30,37,53,0.5); opacity: 0.7; }
+
+        .log { background: #060810; border: 1px solid var(--surface); border-radius: 4px; padding: 0.5rem; max-height: 80px; overflow-y: auto; font-family: var(--font-mono); font-size: 0.4rem; color: var(--mist); margin-top: 0.5rem; }
+
+        @media (max-width: 800px) { .main { flex-direction: column; } .left { width: 100%; } }
     </style>
 </head>
 <body>
+
+<div class="topbar">
+    <span class="logo">👑 HERA</span>
+    <span class="telos empty" id="topTelos">No active telos</span>
+    <span class="dot inactive" id="statusDot"></span>
+</div>
+
 <div class="container">
+<div class="main">
 
-    <div class="header">
-        <h1>👑 H<span>ERA</span></h1>
-        <div class="header-sub">KEEPER OF MEMORY · DOMAIN: CROWN · PYTHAGOREAN #7 · THE HEPTAD</div>
+    <!-- ══ LEFT ══ -->
+    <div class="left">
+
+        <!-- Active Telos -->
+        <div class="panel">
+            <h2>🎯 ACTIVE TELOS</h2>
+            <textarea id="telosInput" placeholder="What are we doing today?"></textarea>
+            <button class="primary" onclick="setTelos()" style="margin-top:0.4rem;">👑 Set Telos</button>
+            <div style="font-family:var(--font-mono);font-size:0.4rem;color:var(--mist);margin-top:0.3rem;">Ctrl+Enter to set</div>
+        </div>
+
+        <!-- Pre-Telos Slots -->
+        <div class="panel">
+            <h2>🌙 PRE-TELOS · 3 SLOTS</h2>
+            <div id="slotsContainer">
+                <div class="slot-row"><span class="slot-num">1</span><input id="p1" placeholder="Future intention..." /><div class="slot-actions"><button onclick="promoteIdea(1)">👑</button><button onclick="toggleRetire(1)">✕</button></div></div>
+                <div class="slot-row"><span class="slot-num">2</span><input id="p2" placeholder="Future intention..." /><div class="slot-actions"><button onclick="promoteIdea(2)">👑</button><button onclick="toggleRetire(2)">✕</button></div></div>
+                <div class="slot-row"><span class="slot-num">3</span><input id="p3" placeholder="Future intention..." /><div class="slot-actions"><button onclick="promoteIdea(3)">👑</button><button onclick="toggleRetire(3)">✕</button></div></div>
+            </div>
+        </div>
+
+        <!-- Integrations -->
+        <div class="panel">
+            <h2>⚡ INTEGRATIONS</h2>
+            <div class="toggle-row"><span>Hermes · Email & News</span><div class="toggle-switch on" id="toggleHermes" onclick="toggleIntegration('hermes')"></div></div>
+            <div class="toggle-row"><span>Apollo · Image Synthesis</span><div class="toggle-switch on" id="toggleApollo" onclick="toggleIntegration('apollo')"></div></div>
+            <div class="toggle-row"><span>Aphrodite · Resonance</span><div class="toggle-switch on" id="toggleAphrodite" onclick="toggleIntegration('aphrodite')"></div></div>
+            <div class="toggle-row"><span>Ares · Task Engine</span><div class="toggle-switch on" id="toggleAres" onclick="toggleIntegration('ares')"></div></div>
+        </div>
+
+        <!-- Previous Teloi -->
+        <div class="panel">
+            <h2>🕯️ PREVIOUS TELOI</h2>
+            <div class="prev-list" id="prevList">Loading...</div>
+        </div>
+
+        <div class="log" id="log"><div>👑 Hera presides. The system is in order.</div></div>
     </div>
 
-    <div class="stats-grid" id="statsGrid">
-        <div class="stat-card"><div class="stat-val" id="statQueue">—</div><div class="stat-label">Mnemosyne Queue</div></div>
-        <div class="stat-card"><div class="stat-val" id="statCoronations">—</div><div class="stat-label">Coronations</div></div>
-        <div class="stat-card"><div class="stat-val" id="statPersistent">—</div><div class="stat-label">Persistent</div></div>
-        <div class="stat-card"><div class="stat-val" id="statLineage">—</div><div class="stat-label">Lineage Chains</div></div>
-        <div class="stat-card"><div class="stat-val" id="statCrown">—</div><div class="stat-label">Crown Words</div></div>
+    <!-- ══ RIGHT ══ -->
+    <div class="right" style="flex:1;display:flex;flex-direction:column;gap:0.8rem;">
+
+        <!-- Task List -->
+        <div class="panel">
+            <h2>📋 TASK LIST</h2>
+            <div class="task-input-row">
+                <input id="newTask" placeholder="New task..." />
+                <button onclick="addTask()">+ Add</button>
+            </div>
+            <div id="taskList">
+                <div style="color:var(--mist);font-style:italic;font-size:0.5rem;">No tasks yet.</div>
+            </div>
+        </div>
+
+        <!-- System Status -->
+        <div class="panel">
+            <h2>📊 SYSTEM STATUS</h2>
+            <div id="systemStatus" style="font-family:var(--font-mono);font-size:0.45rem;color:var(--mist);">Loading...</div>
+        </div>
+
+        <!-- Workspace Switcher -->
+        <div class="panel">
+            <h2>🏛️ WORKSPACE</h2>
+            <div style="display:flex;gap:0.4rem;flex-wrap:wrap;" id="workspaceLinks">
+                <button onclick="window.open('https://kairos-coder.github.io/hermes','_blank')">⚡ Hermes</button>
+                <button onclick="window.open('https://kairos-coder.github.io/aphrodite','_blank')">💗 Aphrodite</button>
+                <button onclick="window.open('https://kairos-coder.github.io/ares','_blank')">⚔️ Ares</button>
+                <button onclick="window.open('https://kairos-coder.github.io/apollo','_blank')">☀️ Apollo</button>
+                <button onclick="window.open('https://kairos-coder.github.io/athena','_blank')">🦉 Athena</button>
+                <button onclick="window.open('https://kairos-coder.github.io/hera','_blank')">👑 Hera</button>
+            </div>
+        </div>
+
     </div>
 
-    <div class="controls">
-        <button id="claimBtn" class="primary">👑 Claim Crown Words</button>
-        <button id="reviewBtn">👑 Review Queue</button>
-        <button id="coronateBtn" disabled>👑 Coronate Worthiest</button>
-        <button id="lineageBtn" disabled>📜 Trace Lineage</button>
-        <button id="sealBtn" disabled>⛓️ Seal Persistent</button>
-    </div>
-
-    <div class="memory-grid" id="memoryGrid">
-        <div class="empty-state">Claim crown words and review the Mnemosyne queue. Hera remembers what matters.</div>
-    </div>
-
-    <div class="lineage-panel">
-        <div class="lineage-title">📜 LINEAGE CHAINS</div>
-        <div class="lineage-tree" id="lineageTree">Review the queue and coronate to reveal lineages.</div>
-    </div>
-
-    <div class="log" id="log"><div>👑 Hera waiting. Memory is the crown.</div></div>
-
+</div>
 </div>
 
 <script type="module">
-const KAIROS_URL = 'https://kzcucjcyxybypncbdbws.supabase.co';
-const KAIROS_KEY = 'sb_publishable_saeUHGocDah-T2_709M6Fg_g26JtLXw';
-const sb = window.supabase.createClient(KAIROS_URL, KAIROS_KEY);
+const sb = window.supabase.createClient(
+  'https://kzcucjcyxybypncbdbws.supabase.co',
+  'sb_publishable_saeUHGocDah-T2_709M6Fg_g26JtLXw'
+);
 
-let myVocab = [];
-let queueItems = [];
-let coronations = [];
-let lineages = [];
+let activeTelos = null;
+let currentSlots = { 1: null, 2: null, 3: null };
+let integrations = { hermes: true, apollo: true, aphrodite: true, ares: true };
 
-const CROWN_SEEDS = new Set([
-    'crown','legacy','blood','oath','throne','lineage','memory','reign',
-    'endure','persist','eternal','record','vow','bind','keep','hold',
-    'house','dynasty','ancestor','descendant','heir','succession','sovereign'
-]);
-
+// ═══════════════════════════════════════
+// LOGGING
+// ═══════════════════════════════════════
 function log(msg) {
-    const el = document.getElementById('log');
-    el.innerHTML = `<div>[${new Date().toLocaleTimeString()}] ${msg}</div>` + el.innerHTML;
-    while (el.children.length > 30) el.removeChild(el.lastChild);
+  const el = document.getElementById('log');
+  el.innerHTML = `<div>[${new Date().toLocaleTimeString()}] ${msg}</div>` + el.innerHTML;
+  if (el.children.length > 50) el.removeChild(el.lastChild);
 }
 
-// ════════════════════════════════════════════════
-// CLAIM CROWN WORDS
-// ════════════════════════════════════════════════
-async function claimTokens() {
-    log('Claiming crown words...');
-    document.getElementById('claimBtn').disabled = true;
-    document.getElementById('claimBtn').innerHTML = '<span class="spin">⟳</span> Claiming...';
-
-    const { data: tokens } = await sb.from('concepts')
-        .select('*').eq('domain', 'crown').eq('state', 'raw').eq('band', 'hermes')
-        .order('score', { ascending: false }).limit(40);
-
-    if (!tokens?.length) {
-        log('No crown words. Run Hermes → Seed All Domains.');
-        document.getElementById('claimBtn').disabled = false;
-        document.getElementById('claimBtn').textContent = '👑 Claim Crown Words';
-        return;
-    }
-
-    for (const t of tokens) {
-        const word = (t.body || '').toLowerCase();
-        const hardcodedBoost = CROWN_SEEDS.has(word) ? 0.4 : 0;
-        const crownScore = hardcodedBoost + 0.3;
-        if (!myVocab.find(v => v.word === word)) myVocab.push({ word, crownScore });
-        await sb.from('concepts').update({ state: 'claimed', realm: 'hera' }).eq('id', t.id);
-    }
-
-    document.getElementById('statCrown').textContent = myVocab.length;
-    log(`Claimed ${tokens.length} crown words. Vocabulary: ${myVocab.length}.`);
-    document.getElementById('claimBtn').disabled = false;
-    document.getElementById('claimBtn').textContent = '👑 Claim Crown Words';
-    document.getElementById('reviewBtn').disabled = false;
+// ═══════════════════════════════════════
+// TELOS
+// ═══════════════════════════════════════
+async function loadTelos() {
+  const { data } = await sb.from('telos').select('*').eq('is_active', true).maybeSingle();
+  activeTelos = data || null;
+  const topEl = document.getElementById('topTelos');
+  const dot = document.getElementById('statusDot');
+  if (activeTelos) {
+    topEl.textContent = '🎯 ' + activeTelos.statement;
+    topEl.classList.remove('empty');
+    dot.classList.remove('inactive');
+  } else {
+    topEl.textContent = 'No active telos';
+    topEl.classList.add('empty');
+    dot.classList.add('inactive');
+  }
+  const { data: prev } = await sb.from('telos').select('statement').eq('is_active', false).order('created_at', { ascending: false }).limit(15);
+  document.getElementById('prevList').innerHTML = (prev || []).map(t => `<div class="item">${t.statement.substring(0, 70)}</div>`).join('') || '<div class="item">None yet.</div>';
 }
 
-// ════════════════════════════════════════════════
-// REVIEW MNEMOSYNE QUEUE
-// ════════════════════════════════════════════════
-async function reviewQueue() {
-    log('Reviewing Mnemosyne queue...');
-    document.getElementById('reviewBtn').disabled = true;
-    document.getElementById('reviewBtn').innerHTML = '<span class="spin">⟳</span> Reviewing...';
+async function setTelos() {
+  const statement = document.getElementById('telosInput').value.trim();
+  if (!statement) return;
+  await sb.from('telos').update({ is_active: false }).eq('is_active', true);
+  await sb.from('telos').insert({ statement, is_active: true });
+  document.getElementById('telosInput').value = '';
+  loadTelos();
+  log('👑 Telos set: ' + statement);
+}
+window.setTelos = setTelos;
 
-    // Pull from all dispatch tables — anything that's been synthesized and is awaiting memory
-    const sources = [
-        { table: 'mnemosyne_queue', label: 'mnemosyne' },
-        { table: 'apollo_artifacts', label: 'apollo' },
-        { table: 'demeter_dispatch', label: 'demeter' },
-        { table: 'aphrodite_dispatch', label: 'aphrodite', filter: 'consumed.eq.true' },
-        { table: 'ares_dispatch', label: 'ares', filter: 'consumed.eq.true' }
-    ];
+// ═══════════════════════════════════════
+// PRE-TELOS
+// ═══════════════════════════════════════
+async function loadSlots() {
+  const { data } = await sb.from('pre_telos').select('*').in('slot', [1, 2, 3]);
+  currentSlots = { 1: null, 2: null, 3: null };
+  (data || []).forEach(r => { currentSlots[r.slot] = r; });
+  for (let s = 1; s <= 3; s++) {
+    document.getElementById(`p${s}`).value = currentSlots[s]?.bullet || '';
+  }
+}
+async function saveSlot(slot, value) {
+  const bullet = value.trim();
+  if (!bullet) { await sb.from('pre_telos').delete().eq('slot', slot); }
+  else { await sb.from('pre_telos').upsert({ slot, bullet, status: 'active', updated_at: new Date().toISOString() }, { onConflict: 'slot' }); }
+  loadSlots();
+}
+const saveTimers = {};
+function debounceSave(slot, value) { clearTimeout(saveTimers[slot]); saveTimers[slot] = setTimeout(() => saveSlot(slot, value), 600); }
+document.getElementById('p1').oninput = e => debounceSave(1, e.target.value);
+document.getElementById('p2').oninput = e => debounceSave(2, e.target.value);
+document.getElementById('p3').oninput = e => debounceSave(3, e.target.value);
 
-    queueItems = [];
-    for (const src of sources) {
-        try {
-            let query = sb.from(src.table).select('*').order('created_at', { ascending: false }).limit(5);
-            if (src.filter) {
-                const [col, op, val] = src.filter.split('.');
-                if (op === 'eq') query = query.eq(col, val === 'true');
-            }
-            const { data } = await query;
-            if (data) queueItems.push(...data.map(d => ({ ...d, source_table: src.table, source_label: src.label })));
-        } catch {}
-    }
+async function promoteIdea(slot) {
+  const idea = currentSlots[slot];
+  if (!idea?.bullet) return;
+  document.getElementById('telosInput').value = idea.bullet;
+  await setTelos();
+}
+async function toggleRetire(slot) {
+  const idea = currentSlots[slot];
+  if (!idea) return;
+  const newStatus = idea.status === 'retired' ? 'active' : 'retired';
+  await sb.from('pre_telos').update({ status: newStatus, updated_at: new Date().toISOString() }).eq('slot', slot);
+  loadSlots();
+  log(`Slot ${slot} ${newStatus === 'retired' ? 'retired' : 'restored'}.`);
+}
+window.promoteIdea = promoteIdea;
+window.toggleRetire = toggleRetire;
 
-    queueItems.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    document.getElementById('statQueue').textContent = queueItems.length;
-    document.getElementById('coronateBtn').disabled = !queueItems.length;
-    renderMemory();
-    log(`Reviewed: ${queueItems.length} items across dispatch tables.`);
-    document.getElementById('reviewBtn').disabled = false;
-    document.getElementById('reviewBtn').textContent = '👑 Review Queue';
+// ═══════════════════════════════════════
+// INTEGRATIONS
+// ═══════════════════════════════════════
+function toggleIntegration(god) {
+  integrations[god] = !integrations[god];
+  const el = document.getElementById(`toggle${god.charAt(0).toUpperCase() + god.slice(1)}`);
+  el.classList.toggle('on', integrations[god]);
+  log(`${god.charAt(0).toUpperCase() + god.slice(1)} ${integrations[god] ? 'enabled' : 'disabled'}.`);
+  // Persist to localStorage for now
+  localStorage.setItem('hera-integrations', JSON.stringify(integrations));
+}
+window.toggleIntegration = toggleIntegration;
+
+function loadIntegrations() {
+  const saved = localStorage.getItem('hera-integrations');
+  if (saved) integrations = JSON.parse(saved);
+  for (const [god, state] of Object.entries(integrations)) {
+    const el = document.getElementById(`toggle${god.charAt(0).toUpperCase() + god.slice(1)}`);
+    if (el) el.classList.toggle('on', state);
+  }
 }
 
-// ════════════════════════════════════════════════
-// CORONATE — ELEVATE TO PERSISTENT MEMORY
-// ════════════════════════════════════════════════
-async function coronateWorthiest() {
-    if (!queueItems.length) return;
-    log('Coronating the worthiest...');
-    document.getElementById('coronateBtn').disabled = true;
-    document.getElementById('coronateBtn').innerHTML = '<span class="spin">⟳</span> Coronating...';
-
-    // Score each item by composite: score, cross-domain value, persistence potential
-    const scored = queueItems.map(item => {
-        const score = item.score || item.cultivation_score || item.desire_score || item.stress_score || 50;
-        const lineage = item.hermes_dispatch_id || item.demeter_dispatch_id || item.svo_triplet_id ? 15 : 0;
-        const hasInsight = (item.insight || item.narrative || item.couplet) ? 10 : 0;
-        return { ...item, compositeScore: score + lineage + hasInsight };
-    });
-
-    scored.sort((a, b) => b.compositeScore - a.compositeScore);
-    coronations = scored.slice(0, 8);
-
-    // Write coronated items to persistent memory
-    let coronated = 0;
-    for (const item of coronations) {
-        const { error } = await sb.from('mnemosyne_queue').upsert({
-            title: (item.insight || item.title || item.couplet || 'Coronated Memory').substring(0, 100),
-            body: JSON.stringify({ source: item.source_label, score: item.compositeScore, coronated_at: new Date().toISOString() }),
-            status: 'coronated',
-            demeter_score: item.compositeScore,
-            created_at: new Date().toISOString()
-        }, { onConflict: 'title' });
-        if (!error) coronated++;
-    }
-
-    document.getElementById('statCoronations').textContent = coronated;
-    document.getElementById('lineageBtn').disabled = !coronations.length;
-    document.getElementById('sealBtn').disabled = !coronations.length;
-    renderMemory();
-    log(`Coronated ${coronated} items to persistent memory.`);
-    document.getElementById('coronateBtn').disabled = false;
-    document.getElementById('coronateBtn').textContent = '👑 Coronate Worthiest';
+// ═══════════════════════════════════════
+// TASKS
+// ═══════════════════════════════════════
+async function loadTasks() {
+  const { data } = await sb.from('tasks').select('*').order('created_at', { ascending: true });
+  const container = document.getElementById('taskList');
+  if (!data?.length) {
+    container.innerHTML = '<div style="color:var(--mist);font-style:italic;font-size:0.5rem;">No tasks yet.</div>';
+    return;
+  }
+  container.innerHTML = data.map(t => `
+    <div class="task-item">
+      <div class="check ${t.done ? 'done' : ''}" onclick="toggleTask('${t.id}', ${!t.done})">${t.done ? '✓' : ''}</div>
+      <span class="body ${t.done ? 'done' : ''}">${esc(t.body)}</span>
+      <button style="padding:0.1rem 0.3rem;font-size:0.35rem;" onclick="deleteTask('${t.id}')">✕</button>
+    </div>
+  `).join('');
 }
 
-// ════════════════════════════════════════════════
-// TRACE LINEAGE
-// ════════════════════════════════════════════════
-async function traceLineage() {
-    if (!coronations.length) return;
-    log('Tracing lineages...');
-    
-    lineages = coronations.map(item => {
-        const source = item.source_label || 'unknown';
-        const prevSources = [];
-        if (item.hermes_dispatch_id) prevSources.push('hermes');
-        if (item.demeter_dispatch_id) prevSources.push('demeter');
-        if (item.svo_triplet_id) prevSources.push('demeter_svo');
-        
-        const chain = [...prevSources, source, 'hera_coronated'];
-        return { title: (item.insight || item.title || '—').substring(0, 60), chain, score: item.compositeScore };
-    });
+async function addTask() {
+  const input = document.getElementById('newTask');
+  const body = input.value.trim();
+  if (!body) return;
+  await sb.from('tasks').insert({ body, done: false, created_at: new Date().toISOString() });
+  input.value = '';
+  loadTasks();
+  log('📋 Task added.');
+}
+async function toggleTask(id, done) {
+  await sb.from('tasks').update({ done }).eq('id', id);
+  loadTasks();
+}
+async function deleteTask(id) {
+  await sb.from('tasks').delete().eq('id', id);
+  loadTasks();
+}
+window.addTask = addTask;
+window.toggleTask = toggleTask;
+window.deleteTask = deleteTask;
 
-    document.getElementById('statLineage').textContent = lineages.length;
-    renderLineage();
-    log(`Traced ${lineages.length} lineages.`);
+// ═══════════════════════════════════════
+// SYSTEM STATUS
+// ═══════════════════════════════════════
+async function loadStatus() {
+  const [tokens, pairs, triplets, prompts, images] = await Promise.all([
+    sb.from('tokens').select('*', { count: 'exact', head: true }),
+    sb.from('pairs').select('*', { count: 'exact', head: true }),
+    sb.from('svo_triplets').select('*', { count: 'exact', head: true }),
+    sb.from('prompts').select('*', { count: 'exact', head: true }),
+    sb.from('images').select('*', { count: 'exact', head: true })
+  ]);
+  document.getElementById('systemStatus').innerHTML = `
+    Tokens: ${tokens.count || 0} · Pairs: ${pairs.count || 0} · Triplets: ${triplets.count || 0}<br>
+    Prompts: ${prompts.count || 0} · Images: ${images.count || 0}<br>
+    Integrations: ${Object.values(integrations).filter(Boolean).length}/4 active
+  `;
 }
 
-function renderMemory() {
-    const grid = document.getElementById('memoryGrid');
-    const allItems = [...(coronations.length ? coronations : queueItems)];
-    if (!allItems.length) {
-        grid.innerHTML = '<div class="empty-state">Review the queue to see what awaits memory.</div>';
-        return;
-    }
-    grid.innerHTML = allItems.slice(0, 12).map(item => {
-        const isCoronated = coronations.includes(item);
-        const title = (item.insight || item.title || item.couplet || 'Unknown').substring(0, 80);
-        const source = item.source_label || item.source || 'unknown';
-        const score = item.compositeScore || item.score || item.cultivation_score || '—';
-        return `
-            <div class="memory-card ${isCoronated ? 'coronation' : 'persistent'}">
-                <div class="memory-head">
-                    <span class="memory-title" style="color:${isCoronated ? 'var(--crown)' : 'var(--text)'}">${esc(title)}</span>
-                    <span class="memory-badge badge-${isCoronated ? 'crown' : 'kept'}">${isCoronated ? 'CORONATED' : 'QUEUED'}</span>
-                </div>
-                <div class="memory-source">Source: ${source} · Score: ${score}</div>
-                <div class="memory-insight">${esc((item.narrative || item.couplet || item.triplet || '').substring(0, 120))}</div>
-                ${isCoronated ? '<div class="memory-lineage">Lineage: hermes → ' + source + ' → hera_coronated</div>' : ''}
-            </div>
-        `;
-    }).join('');
-}
+// ═══════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════
+function esc(s) { return String(s || '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]); }
 
-function renderLineage() {
-    document.getElementById('lineageTree').innerHTML = lineages.map(l => `
-        <div style="margin-bottom:0.4rem;">
-            <span style="color:var(--crown);">${l.chain.join(' → ')}</span><br>
-            <span style="font-size:0.42rem;">"${esc(l.title)}" · score ${l.score}</span>
-        </div>
-    `).join('');
-}
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+loadTelos();
+loadSlots();
+loadIntegrations();
+loadTasks();
+loadStatus();
+document.getElementById('telosInput').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) setTelos(); });
+document.getElementById('newTask').addEventListener('keydown', e => { if (e.key === 'Enter') addTask(); });
+log('👑 Hera presides. The system is in order.');
 
-function esc(s) { return String(s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'})[c]); }
-
-async function archiveSelf() {
-    try {
-        const html = document.documentElement.outerHTML;
-        await sb.from('html').upsert({
-            filename: 'hera.html', title: '👑 Hera · Keeper of Memory', type: 'olympian',
-            content: html, description: 'Claims crown words, reviews Mnemosyne queue, coronates worthiest to persistent memory, traces lineages',
-            reads_from: ['concepts','mnemosyne_queue','apollo_artifacts','demeter_dispatch','aphrodite_dispatch','ares_dispatch'],
-            writes_to: ['mnemosyne_queue'],
-            models_used: [],
-            url: window.location.href, updated_at: new Date().toISOString()
-        }, { onConflict: 'filename' });
-    } catch {}
-}
-
-function init() {
-    document.getElementById('claimBtn').onclick = claimTokens;
-    document.getElementById('reviewBtn').onclick = reviewQueue;
-    document.getElementById('coronateBtn').onclick = coronateWorthiest;
-    document.getElementById('lineageBtn').onclick = traceLineage;
-    document.getElementById('sealBtn').onclick = () => {
-        log('⛓️ Persistence sealed. Coronated items cannot be deleted by Hades.');
-        document.getElementById('statPersistent').textContent = coronations.length;
-    };
-    setTimeout(archiveSelf, 3000);
-    log('👑 Hera — Pythagorean #7. Memory is the crown.');
-}
-init();
+// Refresh status every 30 seconds
+setInterval(loadStatus, 30000);
 </script>
 </body>
 </html>
