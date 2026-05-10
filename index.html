@@ -14,7 +14,6 @@
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: var(--void); font-family: var(--font-body); color: var(--pale); min-height: 100vh; }
-
         body::after { content: ''; position: fixed; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, transparent, var(--hera), var(--gold), var(--hera), transparent); z-index: 100; }
 
         .topbar {
@@ -134,10 +133,11 @@
         <!-- Integrations -->
         <div class="panel">
             <h2>⚡ INTEGRATIONS</h2>
-            <div class="toggle-row"><span>Hermes · Email & News</span><div class="toggle-switch on" id="toggleHermes" onclick="toggleIntegration('hermes')"></div></div>
-            <div class="toggle-row"><span>Apollo · Image Synthesis</span><div class="toggle-switch on" id="toggleApollo" onclick="toggleIntegration('apollo')"></div></div>
-            <div class="toggle-row"><span>Aphrodite · Resonance</span><div class="toggle-switch on" id="toggleAphrodite" onclick="toggleIntegration('aphrodite')"></div></div>
-            <div class="toggle-row"><span>Ares · Task Engine</span><div class="toggle-switch on" id="toggleAres" onclick="toggleIntegration('ares')"></div></div>
+            <div class="toggle-row"><span>⚡ Hermes · Email & News</span><div class="toggle-switch on" id="toggleHermes" onclick="toggleIntegration('hermes')"></div></div>
+            <div class="toggle-row"><span>☀️ Apollo · Image Synthesis</span><div class="toggle-switch on" id="toggleApollo" onclick="toggleIntegration('apollo')"></div></div>
+            <div class="toggle-row"><span>💗 Aphrodite · Resonance</span><div class="toggle-switch on" id="toggleAphrodite" onclick="toggleIntegration('aphrodite')"></div></div>
+            <div class="toggle-row"><span>🌾 Demeter · Cultivation</span><div class="toggle-switch on" id="toggleDemeter" onclick="toggleIntegration('demeter')"></div></div>
+            <div class="toggle-row"><span>🌊 Poseidon · Flow Mapping</span><div class="toggle-switch on" id="togglePoseidon" onclick="toggleIntegration('poseidon')"></div></div>
         </div>
 
         <!-- Previous Teloi -->
@@ -176,9 +176,9 @@
             <div style="display:flex;gap:0.4rem;flex-wrap:wrap;" id="workspaceLinks">
                 <button onclick="window.open('https://kairos-coder.github.io/hermes','_blank')">⚡ Hermes</button>
                 <button onclick="window.open('https://kairos-coder.github.io/aphrodite','_blank')">💗 Aphrodite</button>
-                <button onclick="window.open('https://kairos-coder.github.io/ares','_blank')">⚔️ Ares</button>
                 <button onclick="window.open('https://kairos-coder.github.io/apollo','_blank')">☀️ Apollo</button>
-                <button onclick="window.open('https://kairos-coder.github.io/athena','_blank')">🦉 Athena</button>
+                <button onclick="window.open('https://kairos-coder.github.io/demeter','_blank')">🌾 Demeter</button>
+                <button onclick="window.open('https://kairos-coder.github.io/poseidon','_blank')">🌊 Poseidon</button>
                 <button onclick="window.open('https://kairos-coder.github.io/hera','_blank')">👑 Hera</button>
             </div>
         </div>
@@ -196,7 +196,7 @@ const sb = window.supabase.createClient(
 
 let activeTelos = null;
 let currentSlots = { 1: null, 2: null, 3: null };
-let integrations = { hermes: true, apollo: true, aphrodite: true, ares: true };
+let integrations = { hermes: true, apollo: true, aphrodite: true, demeter: true, poseidon: true };
 
 // ═══════════════════════════════════════
 // LOGGING
@@ -285,9 +285,8 @@ window.toggleRetire = toggleRetire;
 function toggleIntegration(god) {
   integrations[god] = !integrations[god];
   const el = document.getElementById(`toggle${god.charAt(0).toUpperCase() + god.slice(1)}`);
-  el.classList.toggle('on', integrations[god]);
+  if (el) el.classList.toggle('on', integrations[god]);
   log(`${god.charAt(0).toUpperCase() + god.slice(1)} ${integrations[god] ? 'enabled' : 'disabled'}.`);
-  // Persist to localStorage for now
   localStorage.setItem('hera-integrations', JSON.stringify(integrations));
 }
 window.toggleIntegration = toggleIntegration;
@@ -355,7 +354,7 @@ async function loadStatus() {
   document.getElementById('systemStatus').innerHTML = `
     Tokens: ${tokens.count || 0} · Pairs: ${pairs.count || 0} · Triplets: ${triplets.count || 0}<br>
     Prompts: ${prompts.count || 0} · Images: ${images.count || 0}<br>
-    Integrations: ${Object.values(integrations).filter(Boolean).length}/4 active
+    Integrations: ${Object.values(integrations).filter(Boolean).length}/5 active
   `;
 }
 
@@ -375,8 +374,6 @@ loadStatus();
 document.getElementById('telosInput').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) setTelos(); });
 document.getElementById('newTask').addEventListener('keydown', e => { if (e.key === 'Enter') addTask(); });
 log('👑 Hera presides. The system is in order.');
-
-// Refresh status every 30 seconds
 setInterval(loadStatus, 30000);
 </script>
 </body>
