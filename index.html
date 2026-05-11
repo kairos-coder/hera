@@ -543,8 +543,8 @@ async function synthesizeHeraSpeech(text) {
 
       const u = new SpeechSynthesisUtterance(chunks[i]);
       u.voice = heraVoice;
-      u.rate = 0.82;        // noticeably slower
-      u.pitch = 1.05;
+      u.rate = 0.87;        // noticeably slower
+      u.pitch = 0.92;
 
       // Pause length varies by punctuation type
       const chunk = chunks[i];
