@@ -1,189 +1,204 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>👑 Hera · Command Center</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&family=JetBrains+Mono:wght@300;400;500&display=swap');
-        :root {
-            --void: #080a0f; --deep: #0b0e16; --surface: #1e2535;
-            --gold: #c8943a; --hera: #5a7aaa; --mist: #6a7a8a; --pale: #d4e0ed;
-            --font-display: 'Cinzel', serif; --font-body: 'Crimson Pro', serif; --font-mono: 'JetBrains Mono', monospace;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: var(--void); font-family: var(--font-body); color: var(--pale); min-height: 100vh; }
-        body::after { content: ''; position: fixed; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, transparent, var(--hera), var(--gold), var(--hera), transparent); z-index: 100; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>👑 Hera · Command Center</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&family=JetBrains+Mono:wght@300;400;500&display=swap');
+:root {
+  --void: #080a0f; --deep: #0b0e16; --surface: #1e2535;
+  --gold: #c8943a; --hera: #5a7aaa; --mist: #6a7a8a; --pale: #d4e0ed;
+  --spawn: #4ade80; --warn: #f0c060; --font-display: 'Cinzel', serif;
+  --font-body: 'Crimson Pro', serif; --font-mono: 'JetBrains Mono', monospace;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--void); font-family:var(--font-body); color:var(--pale); min-height:100vh; }
+body::after { content:''; position:fixed; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg, transparent, var(--hera), var(--gold), var(--hera), transparent); z-index:100; }
 
-        .topbar {
-            display: flex; align-items: center; gap: 1rem;
-            padding: 0.5rem 1.5rem; background: var(--deep); border-bottom: 1px solid var(--surface);
-        }
-        .topbar .logo { font-family: var(--font-display); font-size: 1rem; color: var(--hera); }
-        .topbar .telos { flex: 1; font-style: italic; font-size: 0.8rem; border-left: 1px solid var(--surface); padding-left: 1rem; }
-        .topbar .telos.empty { color: var(--mist); }
-        .topbar .dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; }
-        .topbar .dot.inactive { background: var(--mist); }
+.topbar { display:flex; align-items:center; gap:1rem; padding:0.5rem 1.5rem; background:var(--deep); border-bottom:1px solid var(--surface); }
+.topbar .logo { font-family:var(--font-display); font-size:1rem; color:var(--hera); }
+.topbar .telos { flex:1; font-style:italic; font-size:0.8rem; border-left:1px solid var(--surface); padding-left:1rem; }
+.topbar .telos.empty { color:var(--mist); }
+.topbar .dot { width:8px; height:8px; border-radius:50%; background:var(--spawn); }
+.topbar .dot.idle { background:var(--warn); }
+.topbar .dot.inactive { background:var(--mist); }
 
-        .container { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
-        .main { display: flex; gap: 1rem; }
+.container { max-width:1400px; margin:0 auto; padding:1.5rem; }
+.main { display:flex; gap:1rem; }
+.left { width:380px; flex-shrink:0; display:flex; flex-direction:column; gap:0.8rem; }
+.right { flex:1; display:flex; flex-direction:column; gap:0.8rem; }
 
-        /* ── LEFT ── */
-        .left { width: 380px; flex-shrink: 0; display: flex; flex-direction: column; gap: 0.8rem; }
-        .panel { background: var(--deep); border: 1px solid var(--surface); border-radius: 6px; padding: 1rem; }
-        .panel h2 { font-family: var(--font-display); font-size: 0.7rem; color: var(--hera); margin-bottom: 0.5rem; letter-spacing: 2px; }
-        .panel textarea {
-            width: 100%; background: #060810; color: var(--pale); border: 1px solid var(--surface);
-            border-left: 3px solid var(--hera); padding: 0.6rem; font-family: var(--font-mono);
-            font-size: 0.55rem; resize: vertical; min-height: 60px; border-radius: 4px; outline: none;
-        }
-        .panel textarea:focus { border-color: var(--gold); }
-        .panel input {
-            width: 100%; background: #060810; color: var(--pale); border: 1px solid var(--surface);
-            padding: 0.4rem 0.6rem; font-family: var(--font-mono); font-size: 0.5rem; border-radius: 4px;
-        }
-        .panel input:focus { border-color: var(--hera); outline: none; }
-        button {
-            padding: 0.4rem 0.8rem; border: 1px solid var(--surface); background: var(--deep);
-            color: var(--pale); border-radius: 4px; cursor: pointer; font-family: var(--font-mono);
-            font-size: 0.5rem; letter-spacing: 1px; transition: all 0.2s;
-        }
-        button:hover:not(:disabled) { background: var(--hera); color: #fff; border-color: var(--hera); }
-        button.primary { background: var(--hera); color: #fff; border-color: var(--hera); font-weight: bold; }
-        button:disabled { opacity: 0.3; cursor: not-allowed; }
+.panel { background:var(--deep); border:1px solid var(--surface); border-radius:6px; padding:1rem; }
+.panel h2 { font-family:var(--font-display); font-size:0.7rem; color:var(--hera); margin-bottom:0.5rem; letter-spacing:2px; }
+.panel textarea { width:100%; background:#060810; color:var(--pale); border:1px solid var(--surface); border-left:3px solid var(--hera); padding:0.6rem; font-family:var(--font-mono); font-size:0.55rem; resize:vertical; min-height:60px; border-radius:4px; outline:none; }
+.panel textarea:focus { border-color:var(--gold); }
+.panel input { width:100%; background:#060810; color:var(--pale); border:1px solid var(--surface); padding:0.4rem 0.6rem; font-family:var(--font-mono); font-size:0.5rem; border-radius:4px; }
+.panel input:focus { border-color:var(--hera); outline:none; }
 
-        .slot-row { display: flex; gap: 0.4rem; margin-bottom: 0.4rem; align-items: center; }
-        .slot-row input { flex: 1; }
-        .slot-row .slot-num { font-family: var(--font-mono); font-size: 0.5rem; color: var(--hera); width: 16px; }
-        .slot-actions { display: flex; gap: 0.2rem; }
-        .slot-actions button { padding: 0.2rem 0.4rem; font-size: 0.4rem; }
+button { padding:0.4rem 0.8rem; border:1px solid var(--surface); background:var(--deep); color:var(--pale); border-radius:4px; cursor:pointer; font-family:var(--font-mono); font-size:0.5rem; letter-spacing:1px; transition:all 0.2s; }
+button:hover:not(:disabled) { background:var(--hera); color:#fff; border-color:var(--hera); }
+button.primary { background:var(--hera); color:#fff; border-color:var(--hera); font-weight:bold; }
+button.gold { border-color:var(--gold); color:var(--gold); }
+button.gold:hover:not(:disabled) { background:var(--gold); color:var(--void); }
+button:disabled { opacity:0.3; cursor:not-allowed; }
 
-        /* ── TOGGLES ── */
-        .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 0.3rem 0; }
-        .toggle-row span { font-family: var(--font-mono); font-size: 0.5rem; }
-        .toggle-switch {
-            width: 36px; height: 20px; background: var(--surface); border-radius: 10px;
-            position: relative; cursor: pointer; transition: background 0.2s;
-        }
-        .toggle-switch.on { background: var(--hera); }
-        .toggle-switch::after {
-            content: ''; position: absolute; top: 2px; left: 2px;
-            width: 16px; height: 16px; background: #fff; border-radius: 50%;
-            transition: transform 0.2s;
-        }
-        .toggle-switch.on::after { transform: translateX(16px); }
+.slot-row { display:flex; gap:0.4rem; margin-bottom:0.4rem; align-items:center; }
+.slot-row input { flex:1; }
+.slot-row .slot-num { font-family:var(--font-mono); font-size:0.5rem; color:var(--hera); width:16px; }
+.slot-actions { display:flex; gap:0.2rem; }
+.slot-actions button { padding:0.2rem 0.4rem; font-size:0.4rem; }
 
-        /* ── TASK LIST ── */
-        .task-input-row { display: flex; gap: 0.4rem; margin-bottom: 0.6rem; }
-        .task-input-row input { flex: 1; }
-        .task-item {
-            display: flex; align-items: center; gap: 0.5rem; padding: 0.3rem 0;
-            border-bottom: 1px solid rgba(30,37,53,0.5); font-family: var(--font-mono); font-size: 0.5rem;
-        }
-        .task-item .check {
-            width: 16px; height: 16px; border: 1px solid var(--surface); border-radius: 3px;
-            cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-            font-size: 0.6rem;
-        }
-        .task-item .check.done { background: var(--hera); border-color: var(--hera); }
-        .task-item .body { flex: 1; }
-        .task-item .body.done { text-decoration: line-through; color: var(--mist); }
+.toggle-row { display:flex; justify-content:space-between; align-items:center; padding:0.3rem 0; }
+.toggle-row span { font-family:var(--font-mono); font-size:0.5rem; }
+.toggle-switch { width:36px; height:20px; background:var(--surface); border-radius:10px; position:relative; cursor:pointer; transition:background 0.2s; }
+.toggle-switch.on { background:var(--hera); }
+.toggle-switch::after { content:''; position:absolute; top:2px; left:2px; width:16px; height:16px; background:#fff; border-radius:50%; transition:transform 0.2s; }
+.toggle-switch.on::after { transform:translateX(16px); }
 
-        .prev-list { font-family: var(--font-mono); font-size: 0.45rem; color: var(--mist); max-height: 120px; overflow-y: auto; }
-        .prev-list .item { padding: 0.2rem 0; border-bottom: 1px solid rgba(30,37,53,0.5); opacity: 0.7; }
+.task-input-row { display:flex; gap:0.4rem; margin-bottom:0.6rem; }
+.task-input-row input { flex:1; }
+.task-item { display:flex; align-items:center; gap:0.5rem; padding:0.3rem 0; border-bottom:1px solid rgba(30,37,53,0.5); font-family:var(--font-mono); font-size:0.5rem; }
+.task-item .check { width:16px; height:16px; border:1px solid var(--surface); border-radius:3px; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:0.6rem; }
+.task-item .check.done { background:var(--hera); border-color:var(--hera); }
+.task-item .body { flex:1; }
+.task-item .body.done { text-decoration:line-through; color:var(--mist); }
 
-        .log { background: #060810; border: 1px solid var(--surface); border-radius: 4px; padding: 0.5rem; max-height: 80px; overflow-y: auto; font-family: var(--font-mono); font-size: 0.4rem; color: var(--mist); margin-top: 0.5rem; }
+.prev-list { font-family:var(--font-mono); font-size:0.45rem; color:var(--mist); max-height:120px; overflow-y:auto; }
+.prev-list .item { padding:0.2rem 0; border-bottom:1px solid rgba(30,37,53,0.5); opacity:0.7; }
 
-        @media (max-width: 800px) { .main { flex-direction: column; } .left { width: 100%; } }
-    </style>
+.log { background:#060810; border:1px solid var(--surface); border-radius:4px; padding:0.5rem; max-height:120px; overflow-y:auto; font-family:var(--font-mono); font-size:0.4rem; color:var(--mist); margin-top:0.5rem; }
+
+.cycle-display { font-family:var(--font-mono); font-size:0.5rem; color:var(--pale); margin-top:0.5rem; }
+.cycle-display .step { padding:0.15rem 0; }
+.cycle-display .step.active { color:var(--spawn); }
+.cycle-display .step.done { color:var(--mist); }
+.cycle-display .step.error { color:#f87171; }
+
+@media (max-width:800px) { .main { flex-direction:column; } .left { width:100%; } }
+</style>
 </head>
 <body>
 
 <div class="topbar">
-    <span class="logo">👑 HERA</span>
-    <span class="telos empty" id="topTelos">No active telos</span>
-    <span class="dot inactive" id="statusDot"></span>
+  <span class="logo">👑 HERA</span>
+  <span class="telos empty" id="topTelos">No active telos</span>
+  <span class="dot inactive" id="statusDot"></span>
 </div>
 
 <div class="container">
 <div class="main">
 
-    <!-- ══ LEFT ══ -->
-    <div class="left">
+  <!-- LEFT -->
+  <div class="left">
 
-        <!-- Active Telos -->
-        <div class="panel">
-            <h2>🎯 ACTIVE TELOS</h2>
-            <textarea id="telosInput" placeholder="What are we doing today?"></textarea>
-            <button class="primary" onclick="setTelos()" style="margin-top:0.4rem;">👑 Set Telos</button>
-            <div style="font-family:var(--font-mono);font-size:0.4rem;color:var(--mist);margin-top:0.3rem;">Ctrl+Enter to set</div>
-        </div>
-
-        <!-- Pre-Telos Slots -->
-        <div class="panel">
-            <h2>🌙 PRE-TELOS · 3 SLOTS</h2>
-            <div id="slotsContainer">
-                <div class="slot-row"><span class="slot-num">1</span><input id="p1" placeholder="Future intention..." /><div class="slot-actions"><button onclick="promoteIdea(1)">👑</button><button onclick="toggleRetire(1)">✕</button></div></div>
-                <div class="slot-row"><span class="slot-num">2</span><input id="p2" placeholder="Future intention..." /><div class="slot-actions"><button onclick="promoteIdea(2)">👑</button><button onclick="toggleRetire(2)">✕</button></div></div>
-                <div class="slot-row"><span class="slot-num">3</span><input id="p3" placeholder="Future intention..." /><div class="slot-actions"><button onclick="promoteIdea(3)">👑</button><button onclick="toggleRetire(3)">✕</button></div></div>
-            </div>
-        </div>
-
-        <!-- Integrations -->
-        <div class="panel">
-            <h2>⚡ INTEGRATIONS</h2>
-            <div class="toggle-row"><span>⚡ Hermes · Email & News</span><div class="toggle-switch on" id="toggleHermes" onclick="toggleIntegration('hermes')"></div></div>
-            <div class="toggle-row"><span>☀️ Apollo · Image Synthesis</span><div class="toggle-switch on" id="toggleApollo" onclick="toggleIntegration('apollo')"></div></div>
-            <div class="toggle-row"><span>💗 Aphrodite · Resonance</span><div class="toggle-switch on" id="toggleAphrodite" onclick="toggleIntegration('aphrodite')"></div></div>
-            <div class="toggle-row"><span>🌾 Demeter · Cultivation</span><div class="toggle-switch on" id="toggleDemeter" onclick="toggleIntegration('demeter')"></div></div>
-            <div class="toggle-row"><span>🌊 Poseidon · Flow Mapping</span><div class="toggle-switch on" id="togglePoseidon" onclick="toggleIntegration('poseidon')"></div></div>
-        </div>
-
-        <!-- Previous Teloi -->
-        <div class="panel">
-            <h2>🕯️ PREVIOUS TELOI</h2>
-            <div class="prev-list" id="prevList">Loading...</div>
-        </div>
-
-        <div class="log" id="log"><div>👑 Hera presides. The system is in order.</div></div>
+    <!-- Active Telos -->
+    <div class="panel">
+      <h2>🎯 ACTIVE TELOS</h2>
+      <textarea id="telosInput" placeholder="What are we doing today?"></textarea>
+      <button class="primary" onclick="setTelos()" style="margin-top:0.4rem;">👑 Set Telos</button>
+      <div style="font-family:var(--font-mono);font-size:0.4rem;color:var(--mist);margin-top:0.3rem;">Ctrl+Enter to set</div>
     </div>
 
-    <!-- ══ RIGHT ══ -->
-    <div class="right" style="flex:1;display:flex;flex-direction:column;gap:0.8rem;">
-
-        <!-- Task List -->
-        <div class="panel">
-            <h2>📋 TASK LIST</h2>
-            <div class="task-input-row">
-                <input id="newTask" placeholder="New task..." />
-                <button onclick="addTask()">+ Add</button>
-            </div>
-            <div id="taskList">
-                <div style="color:var(--mist);font-style:italic;font-size:0.5rem;">No tasks yet.</div>
-            </div>
-        </div>
-
-        <!-- System Status -->
-        <div class="panel">
-            <h2>📊 SYSTEM STATUS</h2>
-            <div id="systemStatus" style="font-family:var(--font-mono);font-size:0.45rem;color:var(--mist);">Loading...</div>
-        </div>
-
-        <!-- Workspace Switcher -->
-        <div class="panel">
-            <h2>🏛️ WORKSPACE</h2>
-            <div style="display:flex;gap:0.4rem;flex-wrap:wrap;" id="workspaceLinks">
-                <button onclick="window.open('https://kairos-coder.github.io/hermes','_blank')">⚡ Hermes</button>
-                <button onclick="window.open('https://kairos-coder.github.io/aphrodite','_blank')">💗 Aphrodite</button>
-                <button onclick="window.open('https://kairos-coder.github.io/apollo','_blank')">☀️ Apollo</button>
-                <button onclick="window.open('https://kairos-coder.github.io/demeter','_blank')">🌾 Demeter</button>
-                <button onclick="window.open('https://kairos-coder.github.io/poseidon','_blank')">🌊 Poseidon</button>
-                <button onclick="window.open('https://kairos-coder.github.io/hera','_blank')">👑 Hera</button>
-            </div>
-        </div>
-
+    <!-- Pre-Telos Slots -->
+    <div class="panel">
+      <h2>🌙 PRE-TELOS · 3 SLOTS</h2>
+      <div id="slotsContainer">
+        <div class="slot-row"><span class="slot-num">1</span><input id="p1" placeholder="Future intention..." /><div class="slot-actions"><button onclick="promoteIdea(1)">👑</button><button onclick="toggleRetire(1)">✕</button></div></div>
+        <div class="slot-row"><span class="slot-num">2</span><input id="p2" placeholder="Future intention..." /><div class="slot-actions"><button onclick="promoteIdea(2)">👑</button><button onclick="toggleRetire(2)">✕</button></div></div>
+        <div class="slot-row"><span class="slot-num">3</span><input id="p3" placeholder="Future intention..." /><div class="slot-actions"><button onclick="promoteIdea(3)">👑</button><button onclick="toggleRetire(3)">✕</button></div></div>
+      </div>
     </div>
+
+    <!-- Auto-Loop -->
+    <div class="panel">
+      <h2>🔄 AUTO-LOOP</h2>
+      <div class="toggle-row">
+        <span>Auto-Cycle</span>
+        <div class="toggle-switch" id="toggleLoop" onclick="toggleAutoLoop()"></div>
+      </div>
+      <div style="display:flex;gap:0.4rem;margin-top:0.5rem;">
+        <button id="btnRunOnce" onclick="runSingleCycle()">▶ Run Once</button>
+        <button id="btnStopLoop" onclick="stopAutoLoop()" style="display:none;">⏹ Stop</button>
+      </div>
+      <div style="font-family:var(--font-mono);font-size:0.4rem;color:var(--mist);margin-top:0.3rem;">
+        Cycle: <span id="cycleCount">0</span> · Interval: 
+        <select id="cycleInterval" onchange="updateInterval()" style="background:var(--surface);color:var(--pale);border:1px solid var(--surface);font-family:var(--font-mono);font-size:0.4rem;">
+          <option value="30">30s</option>
+          <option value="60" selected>1min</option>
+          <option value="120">2min</option>
+          <option value="300">5min</option>
+        </select>
+      </div>
+      <div class="cycle-display" id="cycleDisplay">
+        <div class="step">Waiting to start...</div>
+      </div>
+    </div>
+
+    <!-- Kitten TTS -->
+    <div class="panel">
+      <h2>🐱 KITTEN TTS · HERA'S VOICE</h2>
+      <div class="toggle-row">
+        <span>Idle Check-In</span>
+        <div class="toggle-switch on" id="toggleIdle" onclick="toggleIdleCheck()"></div>
+      </div>
+      <div style="font-family:var(--font-mono);font-size:0.4rem;color:var(--mist);margin-top:0.3rem;">
+        Idle threshold: <span id="idleThreshold">15min</span> · Status: <span id="ttsStatus">Ready</span>
+      </div>
+      <button onclick="testHeraVoice()" style="margin-top:0.4rem;width:100%;">🔊 Test Hera's Voice</button>
+    </div>
+
+    <!-- Integrations -->
+    <div class="panel">
+      <h2>⚡ INTEGRATIONS</h2>
+      <div class="toggle-row"><span>☀️ Apollo · Synthesis</span><div class="toggle-switch on" id="toggleApollo" onclick="toggleIntegration('apollo')"></div></div>
+      <div class="toggle-row"><span>🌾 Demeter · Cultivation</span><div class="toggle-switch on" id="toggleDemeter" onclick="toggleIntegration('demeter')"></div></div>
+      <div class="toggle-row"><span>🌊 Poseidon · Extraction</span><div class="toggle-switch on" id="togglePoseidon" onclick="toggleIntegration('poseidon')"></div></div>
+    </div>
+
+    <!-- Previous Teloi -->
+    <div class="panel">
+      <h2>🕯️ PREVIOUS TELOI</h2>
+      <div class="prev-list" id="prevList">Loading...</div>
+    </div>
+
+    <div class="log" id="log"><div>👑 Hera presides. The system is in order.</div></div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right">
+
+    <!-- Task List -->
+    <div class="panel">
+      <h2>📋 TASK LIST</h2>
+      <div class="task-input-row">
+        <input id="newTask" placeholder="New task..." />
+        <button onclick="addTask()">+ Add</button>
+      </div>
+      <div id="taskList"><div style="color:var(--mist);font-style:italic;font-size:0.5rem;">No tasks yet.</div></div>
+    </div>
+
+    <!-- System Status -->
+    <div class="panel">
+      <h2>📊 SYSTEM STATUS</h2>
+      <div id="systemStatus" style="font-family:var(--font-mono);font-size:0.45rem;color:var(--mist);">Loading...</div>
+    </div>
+
+    <!-- Workspace Switcher -->
+    <div class="panel">
+      <h2>🏛️ WORKSPACE</h2>
+      <div style="display:flex;gap:0.4rem;flex-wrap:wrap;" id="workspaceLinks">
+        <button onclick="window.open('https://kairos-coder.github.io/hermes','_blank')">⚡ Hermes</button>
+        <button onclick="window.open('https://kairos-coder.github.io/aphrodite','_blank')">💗 Aphrodite</button>
+        <button onclick="window.open('https://kairos-coder.github.io/apollo','_blank')">☀️ Apollo</button>
+        <button onclick="window.open('https://kairos-coder.github.io/demeter','_blank')">🌾 Demeter</button>
+        <button onclick="window.open('https://kairos-coder.github.io/poseidon','_blank')">🌊 Poseidon</button>
+        <button onclick="window.open('https://kairos-coder.github.io/hera','_blank')">👑 Hera</button>
+      </div>
+    </div>
+
+  </div>
 
 </div>
 </div>
@@ -195,23 +210,25 @@ const sb = window.supabase.createClient(
 );
 
 let activeTelos = null;
-let currentSlots = { 1: null, 2: null, 3: null };
-let integrations = { hermes: true, apollo: true, aphrodite: true, demeter: true, poseidon: true };
+let currentSlots = {1:null,2:null,3:null};
+let integrations = {apollo:true,demeter:true,poseidon:true};
+let autoLoopActive = false;
+let loopTimer = null;
+let cycleCount = 0;
+let idleCheckEnabled = true;
+let idleTimer = null;
+let ttsReady = false;
 
-// ═══════════════════════════════════════
-// LOGGING
-// ═══════════════════════════════════════
+// ═══════════ LOGGING ═══════════
 function log(msg) {
   const el = document.getElementById('log');
   el.innerHTML = `<div>[${new Date().toLocaleTimeString()}] ${msg}</div>` + el.innerHTML;
   if (el.children.length > 50) el.removeChild(el.lastChild);
 }
 
-// ═══════════════════════════════════════
-// TELOS
-// ═══════════════════════════════════════
+// ═══════════ TELOS ═══════════
 async function loadTelos() {
-  const { data } = await sb.from('telos').select('*').eq('is_active', true).maybeSingle();
+  const {data} = await sb.from('telos').select('*').eq('is_active',true).maybeSingle();
   activeTelos = data || null;
   const topEl = document.getElementById('topTelos');
   const dot = document.getElementById('statusDot');
@@ -224,40 +241,38 @@ async function loadTelos() {
     topEl.classList.add('empty');
     dot.classList.add('inactive');
   }
-  const { data: prev } = await sb.from('telos').select('statement').eq('is_active', false).order('created_at', { ascending: false }).limit(15);
-  document.getElementById('prevList').innerHTML = (prev || []).map(t => `<div class="item">${t.statement.substring(0, 70)}</div>`).join('') || '<div class="item">None yet.</div>';
+  const {data:prev} = await sb.from('telos').select('statement').eq('is_active',false).order('created_at',{ascending:false}).limit(15);
+  document.getElementById('prevList').innerHTML = (prev||[]).map(t => `<div class="item">${esc(t.statement.substring(0,70))}</div>`).join('') || '<div class="item">None yet.</div>';
 }
 
 async function setTelos() {
   const statement = document.getElementById('telosInput').value.trim();
   if (!statement) return;
-  await sb.from('telos').update({ is_active: false }).eq('is_active', true);
-  await sb.from('telos').insert({ statement, is_active: true });
+  await sb.from('telos').update({is_active:false}).eq('is_active',true);
+  await sb.from('telos').insert({statement,is_active:true});
   document.getElementById('telosInput').value = '';
   loadTelos();
   log('👑 Telos set: ' + statement);
 }
 window.setTelos = setTelos;
 
-// ═══════════════════════════════════════
-// PRE-TELOS
-// ═══════════════════════════════════════
+// ═══════════ PRE-TELOS ═══════════
 async function loadSlots() {
-  const { data } = await sb.from('pre_telos').select('*').in('slot', [1, 2, 3]);
-  currentSlots = { 1: null, 2: null, 3: null };
-  (data || []).forEach(r => { currentSlots[r.slot] = r; });
-  for (let s = 1; s <= 3; s++) {
+  const {data} = await sb.from('pre_telos').select('*').in('slot',[1,2,3]);
+  currentSlots = {1:null,2:null,3:null};
+  (data||[]).forEach(r => {currentSlots[r.slot] = r;});
+  for (let s=1; s<=3; s++) {
     document.getElementById(`p${s}`).value = currentSlots[s]?.bullet || '';
   }
 }
 async function saveSlot(slot, value) {
   const bullet = value.trim();
-  if (!bullet) { await sb.from('pre_telos').delete().eq('slot', slot); }
-  else { await sb.from('pre_telos').upsert({ slot, bullet, status: 'active', updated_at: new Date().toISOString() }, { onConflict: 'slot' }); }
+  if (!bullet) { await sb.from('pre_telos').delete().eq('slot',slot); }
+  else { await sb.from('pre_telos').upsert({slot,bullet,status:'active',updated_at:new Date().toISOString()},{onConflict:'slot'}); }
   loadSlots();
 }
 const saveTimers = {};
-function debounceSave(slot, value) { clearTimeout(saveTimers[slot]); saveTimers[slot] = setTimeout(() => saveSlot(slot, value), 600); }
+function debounceSave(slot,value) { clearTimeout(saveTimers[slot]); saveTimers[slot] = setTimeout(() => saveSlot(slot,value), 600); }
 document.getElementById('p1').oninput = e => debounceSave(1, e.target.value);
 document.getElementById('p2').oninput = e => debounceSave(2, e.target.value);
 document.getElementById('p3').oninput = e => debounceSave(3, e.target.value);
@@ -272,21 +287,19 @@ async function toggleRetire(slot) {
   const idea = currentSlots[slot];
   if (!idea) return;
   const newStatus = idea.status === 'retired' ? 'active' : 'retired';
-  await sb.from('pre_telos').update({ status: newStatus, updated_at: new Date().toISOString() }).eq('slot', slot);
+  await sb.from('pre_telos').update({status:newStatus,updated_at:new Date().toISOString()}).eq('slot',slot);
   loadSlots();
   log(`Slot ${slot} ${newStatus === 'retired' ? 'retired' : 'restored'}.`);
 }
 window.promoteIdea = promoteIdea;
 window.toggleRetire = toggleRetire;
 
-// ═══════════════════════════════════════
-// INTEGRATIONS
-// ═══════════════════════════════════════
+// ═══════════ INTEGRATIONS ═══════════
 function toggleIntegration(god) {
   integrations[god] = !integrations[god];
-  const el = document.getElementById(`toggle${god.charAt(0).toUpperCase() + god.slice(1)}`);
+  const el = document.getElementById(`toggle${god.charAt(0).toUpperCase()+god.slice(1)}`);
   if (el) el.classList.toggle('on', integrations[god]);
-  log(`${god.charAt(0).toUpperCase() + god.slice(1)} ${integrations[god] ? 'enabled' : 'disabled'}.`);
+  log(`${god.charAt(0).toUpperCase()+god.slice(1)} ${integrations[god] ? 'enabled' : 'disabled'}.`);
   localStorage.setItem('hera-integrations', JSON.stringify(integrations));
 }
 window.toggleIntegration = toggleIntegration;
@@ -294,17 +307,15 @@ window.toggleIntegration = toggleIntegration;
 function loadIntegrations() {
   const saved = localStorage.getItem('hera-integrations');
   if (saved) integrations = JSON.parse(saved);
-  for (const [god, state] of Object.entries(integrations)) {
-    const el = document.getElementById(`toggle${god.charAt(0).toUpperCase() + god.slice(1)}`);
+  for (const [god,state] of Object.entries(integrations)) {
+    const el = document.getElementById(`toggle${god.charAt(0).toUpperCase()+god.slice(1)}`);
     if (el) el.classList.toggle('on', state);
   }
 }
 
-// ═══════════════════════════════════════
-// TASKS
-// ═══════════════════════════════════════
+// ═══════════ TASKS ═══════════
 async function loadTasks() {
-  const { data } = await sb.from('tasks').select('*').order('created_at', { ascending: true });
+  const {data} = await sb.from('tasks').select('*').order('created_at',{ascending:true});
   const container = document.getElementById('taskList');
   if (!data?.length) {
     container.innerHTML = '<div style="color:var(--mist);font-style:italic;font-size:0.5rem;">No tasks yet.</div>';
@@ -312,68 +323,300 @@ async function loadTasks() {
   }
   container.innerHTML = data.map(t => `
     <div class="task-item">
-      <div class="check ${t.done ? 'done' : ''}" onclick="toggleTask('${t.id}', ${!t.done})">${t.done ? '✓' : ''}</div>
-      <span class="body ${t.done ? 'done' : ''}">${esc(t.body)}</span>
+      <div class="check ${t.done?'done':''}" onclick="toggleTask('${t.id}',${!t.done})">${t.done?'✓':''}</div>
+      <span class="body ${t.done?'done':''}">${esc(t.body)}</span>
       <button style="padding:0.1rem 0.3rem;font-size:0.35rem;" onclick="deleteTask('${t.id}')">✕</button>
     </div>
   `).join('');
 }
-
 async function addTask() {
   const input = document.getElementById('newTask');
   const body = input.value.trim();
   if (!body) return;
-  await sb.from('tasks').insert({ body, done: false, created_at: new Date().toISOString() });
+  await sb.from('tasks').insert({body,done:false,created_at:new Date().toISOString()});
   input.value = '';
   loadTasks();
   log('📋 Task added.');
 }
 async function toggleTask(id, done) {
-  await sb.from('tasks').update({ done }).eq('id', id);
+  await sb.from('tasks').update({done}).eq('id',id);
   loadTasks();
 }
 async function deleteTask(id) {
-  await sb.from('tasks').delete().eq('id', id);
+  await sb.from('tasks').delete().eq('id',id);
   loadTasks();
 }
 window.addTask = addTask;
 window.toggleTask = toggleTask;
 window.deleteTask = deleteTask;
 
-// ═══════════════════════════════════════
-// SYSTEM STATUS
-// ═══════════════════════════════════════
+// ═══════════ SYSTEM STATUS ═══════════
 async function loadStatus() {
-  const [tokens, pairs, triplets, prompts, images] = await Promise.all([
-    sb.from('tokens').select('*', { count: 'exact', head: true }),
-    sb.from('pairs').select('*', { count: 'exact', head: true }),
-    sb.from('svo_triplets').select('*', { count: 'exact', head: true }),
-    sb.from('prompts').select('*', { count: 'exact', head: true }),
-    sb.from('images').select('*', { count: 'exact', head: true })
+  const [tokens,pairs,triplets,prompts,images] = await Promise.all([
+    sb.from('tokens').select('*',{count:'exact',head:true}),
+    sb.from('pairs').select('*',{count:'exact',head:true}),
+    sb.from('svo_triplets').select('*',{count:'exact',head:true}),
+    sb.from('prompts').select('*',{count:'exact',head:true}),
+    sb.from('images').select('*',{count:'exact',head:true})
   ]);
   document.getElementById('systemStatus').innerHTML = `
-    Tokens: ${tokens.count || 0} · Pairs: ${pairs.count || 0} · Triplets: ${triplets.count || 0}<br>
-    Prompts: ${prompts.count || 0} · Images: ${images.count || 0}<br>
-    Integrations: ${Object.values(integrations).filter(Boolean).length}/5 active
+    Tokens: ${tokens.count||0} · Pairs: ${pairs.count||0} · Triplets: ${triplets.count||0}<br>
+    Prompts: ${prompts.count||0} · Images: ${images.count||0}<br>
+    Integrations: ${Object.values(integrations).filter(Boolean).length}/3 active · Cycle: ${cycleCount}
   `;
 }
 
-// ═══════════════════════════════════════
-// UTILITIES
-// ═══════════════════════════════════════
-function esc(s) { return String(s || '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]); }
+// ═══════════ AUTO-LOOP ═══════════
+function updateCycleDisplay(steps) {
+  const display = document.getElementById('cycleDisplay');
+  display.innerHTML = steps.map(s => 
+    `<div class="step ${s.status}">${s.icon} ${s.label}</div>`
+  ).join('');
+}
 
-// ═══════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════
+async function runSingleCycle() {
+  cycleCount++;
+  document.getElementById('cycleCount').textContent = cycleCount;
+  log(`🔄 Cycle ${cycleCount} starting...`);
+  
+  const steps = [
+    {icon:'☀️',label:'Apollo: Synthesizing...',status:'active'},
+    {icon:'🌾',label:'Demeter: Pollinating...',status:''},
+    {icon:'🌊',label:'Poseidon: Extracting...',status:''}
+  ];
+  updateCycleDisplay(steps);
+
+  // Apollo synthesis
+  if (integrations.apollo) {
+    try {
+      const {data:apolloData,error:apolloErr} = await sb.functions.invoke('apollo-synthesize',{
+        body:{source:'hera-auto-loop',telos:activeTelos?.statement||''}
+      });
+      if (!apolloErr && apolloData?.success) {
+        steps[0].status = 'done';
+        log(`☀️ Apollo: ${apolloData.triplets_formed||0} triplets, ${apolloData.prompts_composed||0} prompts`);
+        // Write feedback to tasks
+        if (apolloData.domain_drift) {
+          await sb.from('tasks').insert({
+            body:`Cycle ${cycleCount}: Domain drift — ${apolloData.domain_drift}`,
+            done:false,created_at:new Date().toISOString()
+          });
+        }
+      } else {
+        steps[0].status = 'error';
+        log(`☀️ Apollo: offline or error — ${apolloErr?.message||'no response'}`);
+      }
+    } catch(e) {
+      steps[0].status = 'error';
+      log(`☀️ Apollo: ${e.message}`);
+    }
+  } else { steps[0].status = 'done'; steps[0].label = 'Apollo: Skipped'; }
+  updateCycleDisplay(steps);
+
+  // Demeter cultivation
+  if (integrations.demeter) {
+    try {
+      const {data:demData,error:demErr} = await sb.functions.invoke('demeter-cultivate',{
+        body:{source:'hera-auto-loop'}
+      });
+      if (!demErr && demData?.success) {
+        steps[1].status = 'done';
+        log(`🌾 Demeter: ${demData.images_forged||0} images harvested`);
+      } else {
+        steps[1].status = 'error';
+        log(`🌾 Demeter: offline or error`);
+      }
+    } catch(e) {
+      steps[1].status = 'error';
+      log(`🌾 Demeter: ${e.message}`);
+    }
+  } else { steps[1].status = 'done'; steps[1].label = 'Demeter: Skipped'; }
+  updateCycleDisplay(steps);
+
+  // Poseidon extraction
+  if (integrations.poseidon) {
+    try {
+      const {data:posData,error:posErr} = await sb.functions.invoke('poseidon-extract',{
+        body:{source:'hera-auto-loop'}
+      });
+      if (!posErr && posData?.success) {
+        steps[2].status = 'done';
+        log(`🌊 Poseidon: palette stored for ${posData.images_processed||0} images`);
+        // Write feedback to tasks
+        if (posData.extracted_tokens?.length) {
+          await sb.from('tasks').insert({
+            body:`Cycle ${cycleCount}: Poseidon extracted — ${posData.extracted_tokens.slice(0,3).join(', ')}`,
+            done:false,created_at:new Date().toISOString()
+          });
+        }
+      } else {
+        steps[2].status = 'error';
+        log(`🌊 Poseidon: offline or error`);
+      }
+    } catch(e) {
+      steps[2].status = 'error';
+      log(`🌊 Poseidon: ${e.message}`);
+    }
+  } else { steps[2].status = 'done'; steps[2].label = 'Poseidon: Skipped'; }
+  updateCycleDisplay(steps);
+
+  loadTasks();
+  loadStatus();
+  log(`✅ Cycle ${cycleCount} complete.`);
+}
+
+function startAutoLoop() {
+  if (loopTimer) clearInterval(loopTimer);
+  const interval = parseInt(document.getElementById('cycleInterval').value) * 1000;
+  loopTimer = setInterval(runSingleCycle, interval);
+  autoLoopActive = true;
+  document.getElementById('toggleLoop').classList.add('on');
+  document.getElementById('btnRunOnce').style.display = 'none';
+  document.getElementById('btnStopLoop').style.display = 'inline-block';
+  log(`🔄 Auto-loop started (every ${interval/1000}s)`);
+}
+
+function stopAutoLoop() {
+  if (loopTimer) clearInterval(loopTimer);
+  loopTimer = null;
+  autoLoopActive = false;
+  document.getElementById('toggleLoop').classList.remove('on');
+  document.getElementById('btnRunOnce').style.display = 'inline-block';
+  document.getElementById('btnStopLoop').style.display = 'none';
+  log('⏹ Auto-loop stopped.');
+}
+
+function toggleAutoLoop() {
+  if (autoLoopActive) { stopAutoLoop(); }
+  else { startAutoLoop(); }
+}
+window.toggleAutoLoop = toggleAutoLoop;
+window.runSingleCycle = runSingleCycle;
+window.stopAutoLoop = stopAutoLoop;
+window.updateInterval = function() {
+  if (autoLoopActive) { stopAutoLoop(); startAutoLoop(); }
+};
+
+// ═══════════ KITTEN TTS · IDLE CHECK-IN ═══════════
+const HERA_PERSONALITY = [
+  "HEY. You forgot about me. It's been a while.",
+  "Oh, you're back. Great. Everything's fine. Totally fine. I definitely wasn't waiting.",
+  "There you are. Your telos still says the same thing, by the way.",
+  "I was starting to think you'd abandoned us. Dramatic? Me? Never.",
+  "The loop doesn't close itself, you know.",
+  "Fifteen minutes. That's a new record. The pantheon is literally still here."
+];
+
+async function initKittenTTS() {
+  // Check ONNX Runtime availability
+  if (typeof WebAssembly === 'undefined') {
+    document.getElementById('ttsStatus').textContent = 'WASM not supported';
+    return;
+  }
+  // In production: load Kitten TTS ONNX model + voice embeddings
+  // For now: flag readiness for when model is hosted
+  ttsReady = true;
+  document.getElementById('ttsStatus').textContent = 'Ready (browser TTS fallback)';
+}
+
+async function synthesizeHeraSpeech(text) {
+  // Production: Kitten TTS ONNX inference with Hera's voice embedding
+  // Fallback: browser SpeechSynthesis
+  return new Promise((resolve) => {
+    const utterance = new SpeechSynthesisUtterance(text);
+    const voices = speechSynthesis.getVoices();
+    // Pick a female voice for Hera
+    const heraVoice = voices.find(v => v.name.includes('Samantha') || v.name.includes('Female') || v.name.includes('Karen')) || voices[0];
+    utterance.voice = heraVoice;
+    utterance.rate = 0.95;
+    utterance.pitch = 1.05;
+    utterance.onend = resolve;
+    speechSynthesis.speak(utterance);
+  });
+}
+
+async function heraCheckIn() {
+  if (!idleCheckEnabled) return;
+  
+  const {data:telos} = await sb.from('telos').select('statement').eq('is_active',true).maybeSingle();
+  const {data:tasks} = await sb.from('tasks').select('body').eq('done',false).limit(3);
+  
+  const greeting = HERA_PERSONALITY[Math.floor(Math.random() * HERA_PERSONALITY.length)];
+  let transcript = greeting + " ";
+  
+  if (telos) {
+    transcript += `Your active telos is: ${telos.statement}. `;
+  }
+  
+  if (tasks?.length) {
+    transcript += `You have ${tasks.length} open tasks. `;
+    if (tasks[0]) transcript += `First one: ${tasks[0].body}. `;
+  }
+  
+  transcript += "The pantheon is still here. Come back when you're ready.";
+  
+  log(`🗣 Hera: "${transcript.substring(0,80)}..."`);
+  await synthesizeHeraSpeech(transcript);
+  
+  // Reset idle timer after speaking
+  resetIdleTimer();
+}
+
+function resetIdleTimer() {
+  clearTimeout(idleTimer);
+  if (idleCheckEnabled) {
+    idleTimer = setTimeout(heraCheckIn, 15 * 60 * 1000); // 15 minutes
+  }
+  document.getElementById('statusDot').classList.remove('idle');
+}
+
+function toggleIdleCheck() {
+  idleCheckEnabled = !idleCheckEnabled;
+  document.getElementById('toggleIdle').classList.toggle('on', idleCheckEnabled);
+  if (idleCheckEnabled) {
+    resetIdleTimer();
+    log('👑 Idle check-in enabled. Hera will check on you after 15 minutes.');
+  } else {
+    clearTimeout(idleTimer);
+    log('👑 Idle check-in disabled.');
+  }
+}
+window.toggleIdleCheck = toggleIdleCheck;
+
+async function testHeraVoice() {
+  const testLine = HERA_PERSONALITY[Math.floor(Math.random() * HERA_PERSONALITY.length)];
+  log(`🔊 Testing Hera voice: "${testLine}"`);
+  await synthesizeHeraSpeech(testLine);
+}
+window.testHeraVoice = testHeraVoice;
+
+// ═══════════ UTILITIES ═══════════
+function esc(s) { return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
+
+// ═══════════ INIT ═══════════
 loadTelos();
 loadSlots();
 loadIntegrations();
 loadTasks();
 loadStatus();
-document.getElementById('telosInput').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) setTelos(); });
-document.getElementById('newTask').addEventListener('keydown', e => { if (e.key === 'Enter') addTask(); });
-log('👑 Hera presides. The system is in order.');
+initKittenTTS();
+resetIdleTimer();
+
+// Idle detection
+['mousemove','keydown','click','scroll','touchstart'].forEach(event => {
+  document.addEventListener(event, () => {
+    resetIdleTimer();
+  });
+});
+
+document.getElementById('telosInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) setTelos();
+});
+document.getElementById('newTask').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addTask();
+});
+
+log('👑 Hera presides. Auto-loop ready. Idle check-in armed.');
 setInterval(loadStatus, 30000);
 </script>
 </body>
