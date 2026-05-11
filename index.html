@@ -520,19 +520,54 @@ async function initKittenTTS() {
 }
 
 async function synthesizeHeraSpeech(text) {
-  // Production: Kitten TTS ONNX inference with Hera's voice embedding
-  // Fallback: browser SpeechSynthesis
   return new Promise((resolve) => {
-    const utterance = new SpeechSynthesisUtterance(text);
+    speechSynthesis.cancel(); // clear any queued speech first
+
     const voices = speechSynthesis.getVoices();
-    // Pick a female voice for Hera
-    const heraVoice = voices.find(v => v.name.includes('Samantha') || v.name.includes('Female') || v.name.includes('Karen')) || voices[0];
-    utterance.voice = heraVoice;
-    utterance.rate = 0.95;
-    utterance.pitch = 1.05;
-    utterance.onend = resolve;
-    speechSynthesis.speak(utterance);
+    const heraVoice = voices.find(v => 
+      v.name.includes('Samantha') || 
+      v.name.includes('Female') || 
+      v.name.includes('Karen')
+    ) || voices[0];
+
+    // Split on meaningful pause points
+    const chunks = text
+      .split(/(?<=[.!?])\s+|(?<=,|;|—)\s*/)
+      .map(c => c.trim())
+      .filter(Boolean);
+
+    let i = 0;
+
+    function speakNext() {
+      if (i >= chunks.length) { resolve(); return; }
+
+      const u = new SpeechSynthesisUtterance(chunks[i]);
+      u.voice = heraVoice;
+      u.rate = 0.82;        // noticeably slower
+      u.pitch = 1.05;
+
+      // Pause length varies by punctuation type
+      const chunk = chunks[i];
+      const pauseAfter = chunk.match(/[.!?]$/) ? 520
+                       : chunk.match(/[,;—]$/) ? 280
+                       : 180;
+
+      u.onend = () => {
+        i++;
+        setTimeout(speakNext, pauseAfter);
+      };
+
+      speechSynthesis.speak(u);
+    }
+
+    // Voices may not be loaded yet on first call
+    if (speechSynthesis.getVoices().length === 0) {
+      speechSynthesis.addEventListener('voiceschanged', speakNext, { once: true });
+    } else {
+      speakNext();
+    }
   });
+}
 }
 
 async function heraCheckIn() {
